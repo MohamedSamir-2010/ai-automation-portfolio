@@ -1,0 +1,624 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tally-form",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a3ea6aba-e17d-4330-ae00-460100dd4ac1",
+      "name": "Webhook",
+      "webhookId": "b19cda38-0d19-4890-aa08-b88ddab20303"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc002297-e291-4f2c-a4e8-b8fcfdfab967",
+              "name": "name",
+              "value": "={{ $json.body.data.fields[0].value }}",
+              "type": "string"
+            },
+            {
+              "id": "66896829-548d-4982-91bc-03fc3f62db81",
+              "name": "email",
+              "value": "={{ $json.body.data.fields[1].value }}",
+              "type": "string"
+            },
+            {
+              "id": "2fb375b5-fd1e-4270-ae08-e6d5432b00f1",
+              "name": "budget",
+              "value": "={{ $json.body.data.fields[2].value }}",
+              "type": "number"
+            },
+            {
+              "id": "e11cb4cc-ba6e-4074-bff7-b64531f150cf",
+              "name": "message",
+              "value": "={{ $json.body.data.fields[3].value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "eb5af9e6-0462-4869-b77e-d906f01aa13d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3ff0c0f7-d306-41e9-8736-1f79f4a81170",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "4e1de129-6f2b-4861-bbea-b514d5a332b2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a sales lead qualification assistant.\n\nAnalyze this potential client:\n\nName: {{ $json.name }}\n\nBudget: {{ $json.budget }}\n\nMessage: {{ $json.message }}\n\nYour job is to classify this lead.\n\nClassification rules:\n\nHOT:\n- Clear business problem\n- Good budget\n- High urgency\n- Ready to buy\n\nWARM:\n- Interested but needs more information\n- Budget or timeline is unclear\n\nCOLD:\n- No clear intention to buy\n- Just exploring\n- No business need\n\nReturn the result using the connected structured output format."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        720,
+        -192
+      ],
+      "id": "fa122b3d-f9a7-4a83-accf-6857350a5975",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini",
+          "cachedResultUrl": ""
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        -64
+      ],
+      "id": "3f409354-186e-4fd0-93f1-30d31fce77e7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ryOYivm5TWnqFjrq",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "client_lead"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        816,
+        -64
+      ],
+      "id": "d9c26a38-719f-476a-b1c0-5faa7328959c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"classification\": \"Hot\",\n  \"score\": 85,\n  \"reason\": \"The client has a clear business problem and high urgency.\",\n  \"recommended_action\": \"Schedule a discovery call\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        -80
+      ],
+      "id": "18fa7301-330c-49dc-8a2f-9bd7c9ad1c4c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5adfb1d4-5594-4898-86a8-ec9b5eab0316",
+              "name": "classification",
+              "value": "={{ $json.output.classification }}",
+              "type": "string"
+            },
+            {
+              "id": "8bc70e54-3778-4625-95fa-bc797bc24581",
+              "name": "reason",
+              "value": "={{ $json.output.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "95611aab-b50f-45d4-a35b-954bf65348b9",
+              "name": "recommended_action",
+              "value": "={{ $json.output.recommended_action }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1088,
+        -192
+      ],
+      "id": "e444f3ae-72e5-4e83-8e64-3d0c1d02cc8d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "COLD",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8af33954-5b12-4fca-9737-01fcf6295948"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "050812fe-78ae-4842-acb9-58fa05705adc",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "HOT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "77595f78-cec4-4b6a-8821-93b68ea412b2",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "WARM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "warm"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        -192
+      ],
+      "id": "c5f86bea-ab18-4f23-a1ca-d0076533508f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "Let's discuss your project",
+        "emailType": "text",
+        "message": "=Hi {{ $('Edit Fields').item.json.name }},  Thank you for reaching out.  I reviewed your requirements and would be happy to discuss your project further.  Would you be available for a short discovery call?  Best regards",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        -160
+      ],
+      "id": "bfff216f-8840-4249-8d93-9f664b8fb23a",
+      "name": "Send a message",
+      "webhookId": "8a42cf52-4a6e-4cf2-96f3-0b8e4abba988",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n9RTczXP85G5wcgC",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "More information about your project",
+        "emailType": "text",
+        "message": "=Hi {{ $('Edit Fields').item.json.name }},  Thank you for your interest.  I would like to learn more about your requirements so we can better understand how to help.  Please feel free to share additional details about your project.  Best regards",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1632,
+        32
+      ],
+      "id": "0c3e7598-f86c-4062-aea8-0de1d4130ca1",
+      "name": "Send a message1",
+      "webhookId": "3b108f07-2b52-4fb5-b5db-d883355192f0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n9RTczXP85G5wcgC",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lENuu_c-AAda9iMp1iQykdyCDK5L2MfMy-cvaCNUDlI",
+          "mode": "list",
+          "cachedResultName": "clients lead",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lENuu_c-AAda9iMp1iQykdyCDK5L2MfMy-cvaCNUDlI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lENuu_c-AAda9iMp1iQykdyCDK5L2MfMy-cvaCNUDlI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reason": "={{ $('Edit Fields1').item.json.reason }}",
+            "recommended action": "={{ $('Edit Fields1').item.json.recommended_action }}",
+            "Classification": "={{ $('Edit Fields1').item.json.classification }}",
+            "budget": "={{ $('Edit Fields').item.json.budget }}",
+            "email": "={{ $('Edit Fields').item.json.email }}",
+            "name": "={{ $('Edit Fields').item.json.name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended action",
+              "displayName": "recommended action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Classification",
+              "displayName": "Classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2192,
+        -240
+      ],
+      "id": "e547fea5-3b83-4ab8-82ed-cc98072d4225",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UuAwWpjRhcK5qJYe",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"message\": \"Email is required\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        96
+      ],
+      "id": "8204b422-265a-4d70-b721-f237c41ba5f4",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "eb376531-98d4-4da9-b346-45588c60f501",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "531218923da9af2303c030de661e1cd75e6599419706854650d885e0e0cfa883"
+  },
+  "nodeGroups": [],
+  "id": "0agpGsfSNTb6Togm",
+  "tags": []
+}
